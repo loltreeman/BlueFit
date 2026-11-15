@@ -1,0 +1,1177 @@
+{
+	"info": {
+		"name": "BlueFit",
+		"description": "BlueFit gym membership service (CSCI 180.05). Start FakeTwilio (9997) before BlueFit (9999). Sample pks assume a fresh bluefit_db with the seeded test data.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Member",
+			"item": [
+				{
+					"name": "POST /member/add",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Registers a new member.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Test Person",
+									"type": "text"
+								},
+								{
+									"key": "schoolId",
+									"value": "299999",
+									"type": "text"
+								},
+								{
+									"key": "cellphoneNumber",
+									"value": "+639000000099",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "test@example.com",
+									"type": "text"
+								},
+								{
+									"key": "affiliation",
+									"value": "STUDENT",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/member/add",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"member",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /member/get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Retrieves one member.",
+						"url": {
+							"raw": "{{baseUrl}}/member/get?pk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"member",
+								"get"
+							],
+							"query": [
+								{
+									"key": "pk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /member/all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists all members.",
+						"url": {
+							"raw": "{{baseUrl}}/member/all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"member",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /member/search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Finds members whose name contains the text.",
+						"url": {
+							"raw": "{{baseUrl}}/member/search?name=san",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"member",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "san"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /member/updatephone",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Changes a member's SMS number.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "cellphoneNumber",
+									"value": "+639000000011",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/member/updatephone",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"member",
+								"updatephone"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /member/delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Deletes a member with no history (pk 8 = the member added above).",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "8",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/member/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"member",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Plan",
+			"item": [
+				{
+					"name": "POST /plan/add",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Creates a plan.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Weekend Pass",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "300",
+									"type": "text"
+								},
+								{
+									"key": "durationDays",
+									"value": "2",
+									"type": "text"
+								},
+								{
+									"key": "eligibleAffiliation",
+									"value": "ALL",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plan/add",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plan",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /plan/get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Retrieves one plan.",
+						"url": {
+							"raw": "{{baseUrl}}/plan/get?pk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plan",
+								"get"
+							],
+							"query": [
+								{
+									"key": "pk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /plan/all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists all plans.",
+						"url": {
+							"raw": "{{baseUrl}}/plan/all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plan",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /plan/available",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists the plans a member may buy.",
+						"url": {
+							"raw": "{{baseUrl}}/plan/available?memberPk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plan",
+								"available"
+							],
+							"query": [
+								{
+									"key": "memberPk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /plan/updateprice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Changes a plan's price for future sales.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "850",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plan/updateprice",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plan",
+								"updateprice"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /plan/delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Deletes a plan that has never been sold (pk 8 = the plan added above).",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "8",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plan/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plan",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Subscription",
+			"item": [
+				{
+					"name": "POST /subscription/new",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Starts a subscription for a member with none.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "memberPk",
+									"value": "8",
+									"type": "text"
+								},
+								{
+									"key": "planPk",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/new",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"new"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /subscription/renew",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Adds the next subscription after the active one.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "memberPk",
+									"value": "2",
+									"type": "text"
+								},
+								{
+									"key": "planPk",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/renew",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"renew"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /subscription/freeze",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Pauses an active subscription.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "subscriptionPk",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/freeze",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"freeze"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /subscription/unfreeze",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Resumes a frozen subscription and adds the paused days.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "subscriptionPk",
+									"value": "5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/unfreeze",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"unfreeze"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /subscription/cancel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Cancels a subscription.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "subscriptionPk",
+									"value": "6",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/cancel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"cancel"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /subscription/delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Deletes a subscription with no history.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "subscriptionPk",
+									"value": "9",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /subscription/get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Retrieves one subscription with payment totals.",
+						"url": {
+							"raw": "{{baseUrl}}/subscription/get?pk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"get"
+							],
+							"query": [
+								{
+									"key": "pk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /subscription/bymember",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists a member's subscriptions.",
+						"url": {
+							"raw": "{{baseUrl}}/subscription/bymember?memberPk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"bymember"
+							],
+							"query": [
+								{
+									"key": "memberPk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /subscription/expiring",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists active subscriptions ending within N days.",
+						"url": {
+							"raw": "{{baseUrl}}/subscription/expiring?days=7",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"expiring"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /subscription/unpaid",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists current subscriptions with a balance.",
+						"url": {
+							"raw": "{{baseUrl}}/subscription/unpaid",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscription",
+								"unpaid"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payment",
+			"item": [
+				{
+					"name": "POST /payment/record",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Records a payment.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "subscriptionPk",
+									"value": "3",
+									"type": "text"
+								},
+								{
+									"key": "amount",
+									"value": "200",
+									"type": "text"
+								},
+								{
+									"key": "method",
+									"value": "GCASH",
+									"type": "text"
+								},
+								{
+									"key": "referenceNo",
+									"value": "GC555123",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payment/record",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payment",
+								"record"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /payment/get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Retrieves one payment.",
+						"url": {
+							"raw": "{{baseUrl}}/payment/get?pk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payment",
+								"get"
+							],
+							"query": [
+								{
+									"key": "pk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /payment/bysubscription",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists a subscription's payments.",
+						"url": {
+							"raw": "{{baseUrl}}/payment/bysubscription?subscriptionPk=3",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payment",
+								"bysubscription"
+							],
+							"query": [
+								{
+									"key": "subscriptionPk",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /payment/delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Removes a payment entered by mistake.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "7",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payment/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payment",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CheckIn",
+			"item": [
+				{
+					"name": "POST /checkin/new",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Logs a visit (try memberPk 4 = expired, 5 = frozen, 6 = unpaid).",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "memberPk",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/checkin/new",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"checkin",
+								"new"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /checkin/get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Retrieves one check-in.",
+						"url": {
+							"raw": "{{baseUrl}}/checkin/get?pk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"checkin",
+								"get"
+							],
+							"query": [
+								{
+									"key": "pk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /checkin/bymember",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists a member's visits, newest first.",
+						"url": {
+							"raw": "{{baseUrl}}/checkin/bymember?memberPk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"checkin",
+								"bymember"
+							],
+							"query": [
+								{
+									"key": "memberPk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /checkin/delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Removes a check-in logged by mistake.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/checkin/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"checkin",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notification",
+			"item": [
+				{
+					"name": "POST /notification/send",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Sends a custom SMS via FakeTwilio (must be running on 9997).",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "memberPk",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "message",
+									"value": "Gym closes early today at 6 PM.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification",
+								"send"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /notification/get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Retrieves one logged message.",
+						"url": {
+							"raw": "{{baseUrl}}/notification/get?pk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification",
+								"get"
+							],
+							"query": [
+								{
+									"key": "pk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /notification/bymember",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Lists messages sent to a member.",
+						"url": {
+							"raw": "{{baseUrl}}/notification/bymember?memberPk=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification",
+								"bymember"
+							],
+							"query": [
+								{
+									"key": "memberPk",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /notification/delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"description": "Removes a log entry.",
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "pk",
+									"value": "1",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Report",
+			"item": [
+				{
+					"name": "GET /report/revenue",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Totals payments by method over a date range.",
+						"url": {
+							"raw": "{{baseUrl}}/report/revenue?from=2026-11-01&to=2026-11-30",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"report",
+								"revenue"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "2026-11-01"
+								},
+								{
+									"key": "to",
+									"value": "2026-11-30"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /report/peakhours",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Counts check-ins per hour over a date range.",
+						"url": {
+							"raw": "{{baseUrl}}/report/peakhours?from=2026-10-01&to=2026-11-30",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"report",
+								"peakhours"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "2026-10-01"
+								},
+								{
+									"key": "to",
+									"value": "2026-11-30"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:9999"
+		}
+	]
+}
