@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlueFit Front Desk</title>
+<!--
+  BlueFit front-desk dashboard (bonus UI for CSCI 180.05).
+  Plain HTML + JavaScript: it calls the BlueFit REST service with fetch().
+  GETs use query parameters, POSTs send application/x-www-form-urlencoded,
+  exactly like the Postman collection. RequestFilter allows the cross-origin calls.
+  Open this file in a browser while app.SpringBootApp is running on port 9999.
+
+  Design notes: colours come from competition weight plates and always mean a status
+  (green = allowed/active, red = refused, yellow = pending/partly paid, blue = BlueFit).
+-->
+<link rel="icon" type="image/png" href="BlueFitLogo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --concrete: #E6E9EC;
+    --chalk: #FAFBFC;
+    --iron: #18202B;
+    --iron-soft: #5A6472;
+    --rule: #CDD3DA;
+    --blue: #1C45B5;
+    --blue-deep: #12317F;
+    --green: #1D8A43;
+    --red: #CF2E2E;
+    --yellow: #F0B400;
+    --frost: #4F8FC9;
+
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--concrete); color: var(--iron);
+    font: 400 16px/1.5 var(--body); font-variant-numeric: tabular-nums;
+  }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.1; margin: 0; }
+  h1 { font-size: 48px; letter-spacing: -.5px; }
+  h2 { font-size: 24px; }
+  h3 { font-size: 21px; font-weight: 600; margin: 32px 0 10px; }
+  p { margin: 0; }
+  a { color: var(--blue); }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+  /* ---------- top bar ---------- */
+  .bar { background: var(--chalk); border-bottom: 1px solid var(--rule); }
+  .bar-inner { max-width: 1240px; margin: 0 auto; padding: 0 24px; display: flex; align-items: stretch; gap: 32px; flex-wrap: wrap; }
+  /* BlueFitLogo.png is 523px square with wide transparent margins; this window crops to the mark + wordmark */
+  .logo { display: block; width: 75px; height: 56px; overflow: hidden; margin: 8px 0; flex: none; }
+  .logo img { display: block; width: 125px; height: 125px; margin: -34.5px 0 0 -25.4px; }
+  nav { display: flex; }
+  nav button {
+    background: none; border: 0; color: var(--iron-soft); font: 600 18px var(--display); letter-spacing: .3px;
+    padding: 0 16px; cursor: pointer; border-bottom: 4px solid transparent; border-top: 4px solid transparent;
+    white-space: nowrap; min-height: 52px;
+  }
+  nav button:hover { color: var(--iron); }
+  nav button[aria-current="page"] { color: var(--iron); border-bottom-color: var(--blue); }
+  .server { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--iron-soft); }
+  .server input { width: 180px; padding: 6px 8px; font-size: 14px; }
+  .light { width: 10px; height: 10px; border-radius: 50%; background: #9AA4B1; flex: none; }
+  .light.ok { background: var(--green); } .light.bad { background: var(--red); }
+
+  main { max-width: 1240px; margin: 0 auto; padding: 32px 24px 80px; }
+  .view[hidden] { display: none; }
+
+  /* ---------- shared controls ---------- */
+  label { display: block; font-size: 14px; font-weight: 600; margin: 14px 0 4px; }
+  input, select {
+    width: 100%; font: 400 16px var(--body); color: var(--iron); background: #fff;
+    border: 1px solid #B9C1CB; border-radius: 6px; padding: 9px 11px;
+  }
+  input:focus, select:focus { border-color: var(--blue); }
+  .btn {
+    font: 600 16px var(--body); border-radius: 6px; padding: 9px 16px; cursor: pointer; white-space: nowrap;
+    border: 2px solid var(--blue); background: var(--blue); color: #fff;
+  }
+  .btn:hover { background: var(--blue-deep); border-color: var(--blue-deep); }
+  .btn.quiet { background: transparent; color: var(--iron); border-color: #9AA4B1; }
+  .btn.quiet:hover { border-color: var(--iron); background: #fff; }
+  .btn.danger { background: transparent; border-color: transparent; color: var(--red); padding-left: 6px; padding-right: 6px; }
+  .btn.danger:hover { text-decoration: underline; background: transparent; }
+  .btn.small { font-size: 14px; padding: 4px 10px; border-width: 1px; }
+  .line { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .line > .grow { flex: 1 1 160px; min-width: 0; }
+
+  .muted { color: var(--iron-soft); }
+  .small { font-size: 14px; }
+  .num { text-align: right; white-space: nowrap; }
+  .empty { color: var(--iron-soft); padding: 16px 0; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 14px; font-weight: 600; color: var(--iron-soft); padding: 8px 10px 6px; border-bottom: 2px solid var(--iron); }
+  td { padding: 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th:first-child, td:first-child { padding-left: 0; }
+  th:last-child, td:last-child { padding-right: 0; }
+
+  /* status = plate colour dot + plain word */
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--iron-soft); }
+  .s-active::before, .s-paid::before, .s-accepted::before { background: var(--green); }
+  .s-pending::before, .s-partial::before { background: var(--yellow); }
+  .s-frozen::before { background: var(--frost); }
+  .s-expired::before, .s-cancelled::before, .s-unpaid::before, .s-failed::before { background: var(--red); }
+  .tag { font-size: 14px; color: var(--iron-soft); }
+
+  .sheet { background: var(--chalk); border-radius: 4px; padding: 24px; }
+
+  /* ---------- front desk ---------- */
+  .desk { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+  .today { font-size: 18px; max-width: 60ch; margin-top: 12px; color: var(--iron-soft); }
+  .today b { color: var(--iron); font-weight: 600; }
+  .today button { font: inherit; color: var(--blue); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .finder { margin-top: 28px; }
+  .finder input { font-size: 24px; padding: 14px 16px; border: 2px solid var(--iron); border-radius: 8px; }
+  .finder input:focus { border-color: var(--blue); }
+  .hits { margin-top: 6px; }
+  .hit { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+  .hit .who { flex: 1; min-width: 0; }
+  .hit .who b { font: 600 21px var(--display); }
+
+  /* the pass: the one bold element */
+  .pass {
+    margin-top: 28px; border-radius: 14px; background: var(--blue); color: #fff;
+    padding: 24px 28px; position: relative; overflow: hidden;
+  }
+  .pass.refused { background: var(--chalk); color: var(--iron); border-left: 14px solid var(--red); }
+  .pass .brand { font: italic 700 18px var(--display); opacity: .8; }
+  .pass .name { font: 700 44px/1 var(--display); margin: 10px 0 6px; letter-spacing: -.3px; }
+  .pass .plan { font-size: 18px; opacity: .9; }
+  .pass .reason { font-size: 21px; margin-top: 6px; }
+  .pass .next { margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pass .meter { height: 10px; background: rgba(255,255,255,.25); border-radius: 5px; margin: 20px 0 8px; overflow: hidden; }
+  .pass .meter div { height: 100%; background: #fff; border-radius: 5px; }
+  .pass .dates { display: flex; justify-content: space-between; font-size: 14px; opacity: .85; }
+  .stamp {
+    position: absolute; right: 22px; top: 20px; border: 3px solid #fff; border-radius: 8px;
+    padding: 6px 12px; font: 700 21px/1.1 var(--display); text-align: center; transform: rotate(-6deg);
+  }
+  .stamp small { display: block; font: 600 14px var(--body); }
+  @media (prefers-reduced-motion: no-preference) {
+    .pass.ok .stamp { animation: stamp .35s cubic-bezier(.2,.9,.3,1.3) both; }
+    @keyframes stamp { from { transform: rotate(-6deg) scale(1.8); opacity: 0; } to { transform: rotate(-6deg) scale(1); opacity: 1; } }
+  }
+
+  .log h2 { margin-bottom: 4px; }
+  .log td { padding-top: 12px; padding-bottom: 12px; }
+  .log td.time { width: 90px; color: var(--iron-soft); }
+
+  /* ---------- members ---------- */
+  .split { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .roster input { margin-bottom: 8px; }
+  .roster button.row {
+    display: flex; width: 100%; justify-content: space-between; gap: 8px; text-align: left; font: inherit; color: inherit;
+    background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 10px 8px; cursor: pointer;
+  }
+  .roster button.row:hover { background: var(--chalk); }
+  .roster button.row[aria-current="true"] { background: var(--chalk); box-shadow: inset 4px 0 0 var(--blue); }
+  .roster .row b { font-weight: 600; }
+  details.add { margin-top: 24px; }
+  details.add summary { cursor: pointer; font: 600 18px var(--display); color: var(--blue); }
+
+  .person { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .person h2 { font-size: 44px; }
+  .facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; margin-top: 10px; font-size: 16px; }
+  .facts dt { color: var(--iron-soft); }
+  .facts dd { margin: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .acts { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+  .wide { overflow-x: auto; }
+  .payments td { background: #fff; }
+  .payments .inner { padding: 6px 14px 14px; }
+
+  /* ---------- plans / follow-up / reports ---------- */
+  .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .page-head p { max-width: 60ch; margin-top: 8px; color: var(--iron-soft); }
+  .side-form { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+  .price-edit { display: flex; gap: 6px; justify-content: flex-end; }
+  .price-edit input { width: 100px; padding: 5px 8px; font-size: 14px; }
+
+  .big-figure { font: 700 48px/1 var(--display); }
+  .method { margin-top: 18px; }
+  .method .line { justify-content: space-between; }
+  .track { height: 12px; background: #DDE2E7; border-radius: 6px; margin-top: 6px; overflow: hidden; }
+  .track div { height: 100%; background: var(--blue); }
+  .hours { display: grid; grid-template-columns: repeat(24, 1fr); align-items: end; gap: 3px; height: 220px; margin-top: 24px; border-bottom: 2px solid var(--iron); }
+  .hours div { background: var(--blue); border-radius: 3px 3px 0 0; position: relative; min-height: 0; }
+  .hours div span { position: absolute; bottom: 100%; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 600; padding-bottom: 2px; }
+  .hour-axis { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; font-size: 12px; color: var(--iron-soft); margin-top: 4px; }
+  .hour-axis span { text-align: center; white-space: nowrap; }
+
+  /* ---------- toast ---------- */
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 16px); max-width: min(560px, calc(100% - 32px));
+    background: var(--iron); color: #fff; padding: 12px 18px; border-radius: 8px; font-weight: 500;
+    border-left: 8px solid var(--green); opacity: 0; pointer-events: none; z-index: 10;
+  }
+  #toast.bad { border-left-color: var(--red); }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: no-preference) { #toast { transition: opacity .2s, transform .2s; } }
+
+  @media (max-width: 960px) {
+    .desk, .split, .side-form, .two { grid-template-columns: minmax(0, 1fr); }
+    h1 { font-size: 36px; }
+    .server { margin-left: 0; padding-bottom: 12px; width: 100%; }
+    .server input { flex: 1; }
+    nav { overflow-x: auto; }
+    main { padding: 24px 16px 80px; }
+    .bar-inner { padding: 0 16px; gap: 8px 24px; }
+    .stamp { position: static; display: inline-block; margin-top: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="logo"><img src="BlueFitLogo.png" alt="BlueFit"></span>
+    <nav id="nav" aria-label="Sections">
+      <button data-view="desk" aria-current="page">Front desk</button>
+      <button data-view="members">Members</button>
+      <button data-view="plans">Plans</button>
+      <button data-view="followup">Follow-up</button>
+      <button data-view="reports">Reports</button>
+    </nav>
+    <div class="server">
+      <span class="light" id="light"></span>
+      <span id="serverText">Connecting</span>
+      <input id="baseUrl" value="http://localhost:9999" aria-label="BlueFit server address">
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ================= FRONT DESK ================= -->
+  <section class="view" id="view-desk">
+    <div class="desk">
+      <div>
+        <h1>Who's checking in?</h1>
+        <p class="today" id="today">Loading today's numbers.</p>
+        <div class="finder">
+          <label for="deskSearch">Member name</label>
+          <input id="deskSearch" placeholder="Start typing a name" autocomplete="off">
+        </div>
+        <div class="hits" id="deskResults"></div>
+        <div id="deskResult"></div>
+      </div>
+      <div class="sheet log">
+        <h2>Today's sign-in sheet</h2>
+        <p class="muted small" id="logDate"></p>
+        <table style="margin-top:12px"><tbody id="deskToday"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MEMBERS ================= -->
+  <section class="view" id="view-members" hidden>
+    <div class="split">
+      <div class="roster">
+        <label for="memberFilter">Find a member</label>
+        <input id="memberFilter" placeholder="Name">
+        <div id="memberList"></div>
+        <details class="add" id="addMember">
+          <summary>Register a new member</summary>
+          <form id="addMemberForm">
+            <label>Full name</label><input name="name" placeholder="Juan Dela Cruz">
+            <label>School ID</label><input name="schoolId" placeholder="4 to 12 digits" inputmode="numeric">
+            <label>Cellphone number</label><input name="cellphoneNumber" placeholder="+639XXXXXXXXX" inputmode="tel">
+            <label>Email <span class="muted">(optional)</span></label><input name="email" type="email">
+            <label>Affiliation</label>
+            <select name="affiliation"><option value="STUDENT">Student</option><option value="FACULTY">Faculty</option><option value="STAFF">Staff</option><option value="ALUMNI">Alumni</option></select>
+            <button class="btn" style="margin-top:16px;width:100%">Register member</button>
+          </form>
+        </details>
+      </div>
+      <div id="memberDetail" class="sheet">
+        <p class="empty">Choose a member from the list to see their plans, payments, visits and texts.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PLANS ================= -->
+  <section class="view" id="view-plans" hidden>
+    <div class="side-form">
+      <div>
+        <div class="page-head">
+          <div>
+            <h1>Plans</h1>
+            <p>A new price applies to future sales only. Members keep the price they agreed to.</p>
+          </div>
+        </div>
+        <div class="wide"><table style="min-width:600px">
+          <thead><tr><th>Plan</th><th>Who can buy it</th><th class="num">Length</th><th class="num">Price</th><th class="num">Change price</th><th></th></tr></thead>
+          <tbody id="planList"></tbody>
+        </table></div>
+      </div>
+      <form id="addPlanForm" class="sheet">
+        <h2>Add a plan</h2>
+        <label>Plan name</label><input name="name" placeholder="Monthly Student">
+        <label>Price in pesos</label><input name="price" placeholder="800" inputmode="decimal">
+        <label>Length in days</label><input name="durationDays" placeholder="30" inputmode="numeric">
+        <label>Who can buy it</label>
+        <select name="eligibleAffiliation"><option value="STUDENT">Students</option><option value="FACULTY">Faculty</option><option value="STAFF">Staff</option><option value="ALUMNI">Alumni</option><option value="ALL">Everyone</option></select>
+        <button class="btn" style="margin-top:16px;width:100%">Add plan</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= FOLLOW-UP ================= -->
+  <section class="view" id="view-followup" hidden>
+    <div class="page-head">
+      <div>
+        <h1>Follow-up</h1>
+        <p>Members to call or remind. BlueFit also texts reminders 7 days and 1 day before a plan ends.</p>
+      </div>
+    </div>
+    <div class="two">
+      <div>
+        <div class="line" style="justify-content:space-between;align-items:center">
+          <h2>Plans ending soon</h2>
+          <label class="line" style="margin:0;font-weight:400;align-items:center">Within
+            <input id="expDays" value="7" style="width:64px" inputmode="numeric"> days</label>
+        </div>
+        <table style="margin-top:8px"><thead><tr><th>Member</th><th>Plan</th><th>Ends</th><th></th></tr></thead><tbody id="expiringList"></tbody></table>
+      </div>
+      <div>
+        <h2 style="padding:6px 0">Balances owed</h2>
+        <table style="margin-top:8px"><thead><tr><th>Member</th><th>Plan</th><th class="num">Owes</th><th></th></tr></thead><tbody id="unpaidList"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= REPORTS ================= -->
+  <section class="view" id="view-reports" hidden>
+    <div class="page-head">
+      <h1>Reports</h1>
+      <form class="line" id="repForm">
+        <div><label for="repFrom">From</label><input type="date" id="repFrom"></div>
+        <div><label for="repTo">To</label><input type="date" id="repTo"></div>
+        <button class="btn">Show reports</button>
+      </form>
+    </div>
+    <div class="two">
+      <div class="sheet"><h2>Money collected</h2><div id="revenue"></div></div>
+      <div class="sheet"><h2>Busiest hours</h2><div id="peak"></div></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ---------- talking to the BlueFit service ----------
+
+const $ = (id) => document.getElementById(id);
+const base = () => $('baseUrl').value.replace(/\/+$/, '');
+
+async function call(method, path, params = {}) {
+  const clean = {};
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== '') clean[k] = v;
+  const qs = new URLSearchParams(clean).toString();
+  let res;
+  try {
+    res = method === 'GET'
+      ? await fetch(base() + path + (qs ? '?' + qs : ''))
+      : await fetch(base() + path, { method: 'POST', body: new URLSearchParams(clean) }); // form-urlencoded
+  } catch (e) {
+    setOnline(false);
+    throw new Error(`BlueFit isn't answering at ${base()}. Start SpringBootApp in Eclipse, then try again.`);
+  }
+  setOnline(true);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `The server answered with error ${res.status}.`);
+  return data;
+}
+const get = (path, params) => call('GET', path, params);
+const post = (path, params) => call('POST', path, params);
+
+function setOnline(ok) {
+  $('light').className = 'light ' + (ok ? 'ok' : 'bad');
+  $('serverText').textContent = ok ? 'Connected' : 'Not connected';
+}
+
+// ---------- formatting ----------
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const peso = (n) => 'PHP ' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pesoShort = (n) => 'PHP ' + Number(n).toLocaleString('en-PH', { maximumFractionDigits: 0 });
+const cap = (s) => s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
+const status = (s) => `<span class="status s-${esc(String(s).toLowerCase())}">${esc(cap(s))}</span>`;
+const AFFIL = { STUDENT: 'Student', FACULTY: 'Faculty', STAFF: 'Staff', ALUMNI: 'Alumni', ALL: 'Everyone' };
+const MSG_TYPE = { REMINDER_7D: '7-day reminder', REMINDER_1D: '1-day reminder', INACTIVITY: 'We miss you', OWNER_SUMMARY: 'Owner summary', MANUAL: 'Sent from desk' };
+const METHOD = { CASH: 'Cash', GCASH: 'GCash', CARD: 'Card' };
+
+const today = () => new Date().toLocaleDateString('en-CA'); // yyyy-MM-dd local
+const asDate = (d) => new Date(d + 'T00:00:00');
+const day = (d) => asDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const dayYear = (d) => asDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const clock = (ts) => new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+const stamp = (ts) => `${day(ts.slice(0, 10))}, ${clock(ts)}`;
+const hourName = (h) => h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const formData = (form) => Object.fromEntries(new FormData(form).entries());
+
+let toastTimer;
+function toast(msg, ok = true) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show' + (ok ? '' : ' bad');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.className = ok ? '' : 'bad'), ok ? 3500 : 6000);
+}
+
+// runs an action, shows its error as a toast, then refreshes what changed
+async function act(fn, okMsg, after) {
+  try {
+    const r = await fn();
+    if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg);
+    if (after) await after(r);
+    return r;
+  } catch (e) {
+    toast(e.message, false);
+  }
+}
+
+// ---------- views ----------
+
+const loaders = {};
+let currentView = 'desk';
+function show(view) {
+  currentView = view;
+  document.querySelectorAll('#nav button').forEach((b) => b.toggleAttribute('aria-current', b.dataset.view === view));
+  document.querySelectorAll('#nav button[aria-current]').forEach((b) => b.setAttribute('aria-current', 'page'));
+  document.querySelectorAll('.view').forEach((v) => (v.hidden = v.id !== 'view-' + view));
+  if (loaders[view]) loaders[view]().catch((e) => toast(e.message, false));
+}
+$('nav').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.view); });
+$('baseUrl').addEventListener('change', () => show(currentView));
+
+// ================= FRONT DESK =================
+
+const memberNames = {};
+
+loaders.desk = async () => {
+  const d = today();
+  const [members, expiring, unpaid, rev] = await Promise.all([
+    get('/member/all'), get('/subscription/expiring', { days: 7 }), get('/subscription/unpaid'),
+    get('/report/revenue', { from: d, to: d }),
+  ]);
+  members.forEach((m) => (memberNames[m.pk] = m.name));
+
+  const lists = await Promise.all(members.map((m) => get('/checkin/bymember', { memberPk: m.pk })));
+  const visits = lists.flat().filter((c) => c.checkedInAt.startsWith(d)).sort((a, b) => b.checkedInAt.localeCompare(a.checkedInAt));
+
+  $('today').innerHTML =
+    `So far today: <b>${plural(visits.length, 'check-in')}</b> and <b>${pesoShort(rev.totalRevenue)}</b> collected. ` +
+    `<button onclick="show('followup')">${plural(expiring.length, 'plan')} end this week</button> and ` +
+    `<button onclick="show('followup')">${plural(unpaid.length, 'member')} still owe${unpaid.length === 1 ? 's' : ''} money</button>.`;
+
+  $('logDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  $('deskToday').innerHTML = visits.length
+    ? visits.map((c) => `<tr><td class="time">${clock(c.checkedInAt)}</td><td>${esc(c.memberName)}</td>
+        <td class="num muted small">${plural(c.daysRemaining, 'day')} left</td></tr>`).join('')
+    : '<tr><td class="empty">Nobody has signed in yet. Search for a member to check them in.</td></tr>';
+};
+
+let searchTimer, lastHits = [];
+$('deskSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(deskSearch, 180); });
+$('deskSearch').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && lastHits.length === 1) deskCheckIn(lastHits[0].pk);
+});
+
+async function deskSearch() {
+  const name = $('deskSearch').value.trim();
+  if (!name) { $('deskResults').innerHTML = ''; lastHits = []; return; }
+  try {
+    lastHits = await get('/member/search', { name });
+    lastHits.forEach((m) => (memberNames[m.pk] = m.name));
+    $('deskResults').innerHTML = lastHits.length
+      ? lastHits.map((m) => `<div class="hit">
+          <div class="who"><b>${esc(m.name)}</b><div class="tag">${AFFIL[m.affiliation]}, ID ${esc(m.schoolId)}</div></div>
+          <button class="btn" onclick="deskCheckIn(${m.pk})">Check in</button></div>`).join('')
+      : `<p class="empty">No member named “${esc(name)}”. <a href="#" onclick="show('members');$('addMember').open=true;return false">Register them</a> first.</p>`;
+  } catch (e) { toast(e.message, false); }
+}
+
+// what the desk should do about each refusal reason from CheckInComponent
+function nextStep(reason) {
+  if (/expired|no active/i.test(reason)) return 'Sell them a new plan or renew the old one.';
+  if (/frozen/i.test(reason)) return 'Unfreeze their plan if they are back.';
+  if (/no payment/i.test(reason)) return 'Record a payment, then check them in.';
+  if (/already checked in/i.test(reason)) return 'They are already on today\'s sign-in sheet.';
+  return '';
+}
+
+async function deskCheckIn(pk) {
+  const box = $('deskResult');
+  const name = memberNames[pk] || 'This member';
+  try {
+    const c = await post('/checkin/new', { memberPk: pk });
+    const s = await get('/subscription/get', { pk: c.subscriptionPk });
+    const total = (asDate(s.endDate) - asDate(s.startDate)) / 864e5;
+    const used = Math.min(100, Math.max(0, ((total - c.daysRemaining) / total) * 100));
+    box.innerHTML = `<div class="pass ok">
+      <div class="brand">BlueFit member</div>
+      <div class="name">${esc(c.memberName)}</div>
+      <div class="plan">${esc(s.planName)}, ${plural(c.daysRemaining, 'day')} left</div>
+      <div class="meter" aria-hidden="true"><div style="width:${used}%"></div></div>
+      <div class="dates"><span>Started ${dayYear(s.startDate)}</span><span>Ends ${dayYear(s.endDate)}</span></div>
+      <div class="stamp">Checked in<small>${clock(c.checkedInAt)}</small></div>
+    </div>`;
+    $('deskSearch').value = ''; $('deskResults').innerHTML = ''; lastHits = [];
+    $('deskSearch').focus();
+    loaders.desk();
+  } catch (e) {
+    const step = nextStep(e.message);
+    box.innerHTML = `<div class="pass refused" role="alert">
+      <div class="name">${esc(name)} can't come in</div>
+      <div class="reason">${esc(e.message)}</div>
+      <div class="next">${step ? `<span class="muted">${esc(step)}</span>` : ''}
+        <button class="btn quiet" onclick="openMember(${pk})">Open ${esc(name.split(' ')[0])}'s record</button></div>
+    </div>`;
+  }
+}
+
+// ================= MEMBERS =================
+
+let allMembers = [];
+let selectedMember = null;
+const openPayments = new Set();
+
+loaders.members = async () => {
+  allMembers = await get('/member/all');
+  allMembers.forEach((m) => (memberNames[m.pk] = m.name));
+  renderRoster();
+  if (selectedMember) await showMember(selectedMember);
+};
+
+function renderRoster() {
+  const f = $('memberFilter').value.trim().toLowerCase();
+  const list = allMembers.filter((m) => m.name.toLowerCase().includes(f));
+  $('memberList').innerHTML = list.length
+    ? list.map((m) => `<button class="row" aria-current="${m.pk === selectedMember}" onclick="showMember(${m.pk})">
+        <b>${esc(m.name)}</b><span class="tag">${AFFIL[m.affiliation]}</span></button>`).join('')
+    : '<p class="empty">No members match that name.</p>';
+}
+$('memberFilter').addEventListener('input', renderRoster);
+
+$('addMemberForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  act(() => post('/member/add', formData(e.target)), (m) => `Registered ${m.name}.`, async (m) => {
+    e.target.reset();
+    $('addMember').open = false;
+    selectedMember = m.pk;
+    await loaders.members();
+  });
+});
+
+async function showMember(pk) {
+  selectedMember = pk;
+  renderRoster();
+  let m, subs, plans, visits, msgs;
+  try {
+    [m, subs, plans, visits, msgs] = await Promise.all([
+      get('/member/get', { pk }), get('/subscription/bymember', { memberPk: pk }), get('/plan/available', { memberPk: pk }),
+      get('/checkin/bymember', { memberPk: pk }), get('/notification/bymember', { memberPk: pk }),
+    ]);
+  } catch (e) { toast(e.message, false); return; }
+
+  const payments = {};
+  await Promise.all(subs.filter((s) => openPayments.has(s.pk)).map(async (s) => {
+    payments[s.pk] = await get('/payment/bysubscription', { subscriptionPk: s.pk });
+  }));
+
+  subs.sort((a, b) => b.pk - a.pk);
+  const subRows = subs.map((s) => {
+    const acts = [];
+    if (s.status === 'ACTIVE') acts.push(`<button class="btn small quiet" onclick="subAction('freeze', ${s.pk})">Freeze</button>`);
+    if (s.status === 'FROZEN') acts.push(`<button class="btn small quiet" onclick="subAction('unfreeze', ${s.pk})">Unfreeze</button>`);
+    if (!['EXPIRED', 'CANCELLED'].includes(s.status)) acts.push(`<button class="btn small danger" onclick="subAction('cancel', ${s.pk})">Cancel</button>`);
+    acts.push(`<button class="btn small danger" onclick="subAction('delete', ${s.pk})">Delete</button>`);
+    let html = `<tr>
+      <td><b>${esc(s.planName)}</b><div class="tag">${day(s.startDate)} – ${dayYear(s.endDate)}</div></td>
+      <td>${status(s.status)}</td>
+      <td class="num">${peso(s.amountPaid)}<div class="tag">of ${peso(s.agreedPrice)}</div></td>
+      <td>${status(s.paymentStatus)}</td>
+      <td><div class="acts"><button class="btn small quiet" aria-expanded="${openPayments.has(s.pk)}" onclick="togglePayments(${s.pk})">Payments</button>${acts.join('')}</div></td>
+    </tr>`;
+    if (openPayments.has(s.pk)) {
+      const ps = payments[s.pk] || [];
+      html += `<tr class="payments"><td colspan="5"><div class="inner">
+        <table>${ps.map((p) => `<tr><td>${stamp(p.paidAt)}</td><td>${METHOD[p.method]}${p.referenceNo ? ` <span class="tag">ref ${esc(p.referenceNo)}</span>` : ''}</td>
+          <td class="num">${peso(p.amount)}</td><td class="num"><button class="btn small danger" onclick="deletePayment(${p.pk})">Remove</button></td></tr>`).join('')
+          || '<tr><td class="empty">No payments yet.</td></tr>'}</table>
+        ${s.status !== 'CANCELLED' && Number(s.balance) > 0 ? `
+        <form class="line" style="margin-top:6px" onsubmit="recordPayment(event, ${s.pk})">
+          <div class="grow"><label>Amount (owes ${peso(s.balance)})</label><input name="amount" value="${s.balance}" inputmode="decimal"></div>
+          <div class="grow"><label>Paid by</label><select name="method"><option value="CASH">Cash</option><option value="GCASH">GCash</option><option value="CARD">Card</option></select></div>
+          <div class="grow"><label>Reference no.</label><input name="referenceNo" placeholder="Needed for GCash and card"></div>
+          <button class="btn">Record payment</button>
+        </form>` : ''}
+      </div></td></tr>`;
+    }
+    return html;
+  }).join('');
+
+  const first = esc(m.name.split(' ')[0]);
+  $('memberDetail').innerHTML = `
+    <div class="person">
+      <div>
+        <h2>${esc(m.name)}</h2>
+        <dl class="facts">
+          <dt>Affiliation</dt><dd>${AFFIL[m.affiliation]}</dd>
+          <dt>School ID</dt><dd>${esc(m.schoolId)}</dd>
+          <dt>Cellphone</dt><dd>${esc(m.cellphoneNumber)}</dd>
+          <dt>Email</dt><dd>${m.email ? esc(m.email) : '<span class="muted">None given</span>'}</dd>
+          <dt>Member since</dt><dd>${dayYear(m.joinedOn)}</dd>
+        </dl>
+      </div>
+      <div class="line">
+        <button class="btn" onclick="memberCheckIn(${m.pk})">Check in</button>
+        <button class="btn danger" onclick="deleteMember(${m.pk})">Delete member</button>
+      </div>
+    </div>
+
+    <h3>Plans</h3>
+    ${plans.length ? `<form class="line" onsubmit="event.preventDefault()">
+      <div class="grow"><label for="planPick">Plan to sell</label>
+        <select id="planPick">${plans.map((p) => `<option value="${p.pk}">${esc(p.name)}, ${p.durationDays} days, ${peso(p.price)}</option>`).join('')}</select></div>
+      <button class="btn" onclick="startSub('new', ${m.pk})">Start plan today</button>
+      <button class="btn quiet" onclick="startSub('renew', ${m.pk})">Renew after current plan</button>
+    </form>` : `<p class="muted">No plans are open to ${AFFIL[m.affiliation].toLowerCase()} members yet. Add one on the Plans page.</p>`}
+    <div class="wide"><table style="margin-top:16px">
+      <thead><tr><th>Plan</th><th>Status</th><th class="num">Paid</th><th>Payment</th><th></th></tr></thead>
+      <tbody>${subRows || `<tr><td colspan="5" class="empty">${first} has no plans yet. Start one above.</td></tr>`}</tbody>
+    </table></div>
+
+    <div class="two">
+      <div>
+        <h3>Visits</h3>
+        <table>${visits.slice(0, 10).map((c) => `<tr><td>${stamp(c.checkedInAt)}</td>
+          <td class="num"><button class="btn small danger" onclick="deleteCheckIn(${c.pk})">Remove</button></td></tr>`).join('')
+          || `<tr><td class="empty">${first} hasn't visited yet.</td></tr>`}</table>
+        ${visits.length > 10 ? `<p class="tag" style="margin-top:6px">Showing the latest 10 of ${visits.length} visits.</p>` : ''}
+      </div>
+      <div>
+        <h3>Texts</h3>
+        <form class="line" onsubmit="sendSms(event, ${m.pk})">
+          <div class="grow"><label>Text ${first}</label><input name="message" maxlength="320" placeholder="Up to 320 characters"></div>
+          <button class="btn quiet">Send text</button>
+        </form>
+        <table style="margin-top:8px">${msgs.map((n) => `<tr><td>
+            <div class="line" style="gap:10px;align-items:center"><b class="small">${MSG_TYPE[n.type] || esc(n.type)}</b>${status(n.status)}<span class="tag">${stamp(n.sentAt)}</span></div>
+            <p style="margin-top:4px;max-width:60ch">${esc(n.message)}</p></td>
+          <td class="num"><button class="btn small danger" onclick="deleteNotification(${n.pk})">Remove</button></td></tr>`).join('')
+          || `<tr><td class="empty">No texts sent to ${first} yet.</td></tr>`}</table>
+      </div>
+    </div>
+
+    <h3>Change cellphone number</h3>
+    <form class="line" onsubmit="updatePhone(event, ${m.pk})">
+      <div class="grow" style="max-width:320px"><label>New number</label><input name="cellphoneNumber" placeholder="+639XXXXXXXXX" inputmode="tel"></div>
+      <button class="btn quiet">Save number</button>
+    </form>`;
+}
+
+const refreshMember = () => showMember(selectedMember);
+
+function memberCheckIn(pk) {
+  act(() => post('/checkin/new', { memberPk: pk }), (c) => `Checked in ${c.memberName}. ${plural(c.daysRemaining, 'day')} left.`, refreshMember);
+}
+function deleteMember(pk) {
+  if (!confirm(`Delete ${memberNames[pk]}? This only works for members with no plans, visits or texts.`)) return;
+  act(() => post('/member/delete', { pk }), 'Member deleted.', async () => {
+    selectedMember = null;
+    $('memberDetail').innerHTML = '<p class="empty">Member deleted. Choose another member from the list.</p>';
+    await loaders.members();
+  });
+}
+function updatePhone(e, pk) {
+  e.preventDefault();
+  act(() => post('/member/updatephone', { pk, ...formData(e.target) }), 'Number saved.', loaders.members);
+}
+function sendSms(e, pk) {
+  e.preventDefault();
+  act(() => post('/notification/send', { memberPk: pk, ...formData(e.target) }), 'Text sent.', refreshMember);
+}
+function startSub(kind, memberPk) {
+  const planPk = $('planPick').value;
+  act(() => post('/subscription/' + kind, { memberPk, planPk }),
+    (s) => s.status === 'PENDING' ? `Renewed. ${s.planName} starts ${dayYear(s.startDate)}.` : `Started ${s.planName}. It ends ${dayYear(s.endDate)}.`,
+    refreshMember);
+}
+function subAction(kind, subscriptionPk) {
+  if (kind === 'cancel' && !confirm('Cancel this plan? Its payments and visits stay on record.')) return;
+  if (kind === 'delete' && !confirm('Delete this plan? This only works for a plan with no payments, visits or texts.')) return;
+  const done = { freeze: 'Plan frozen. Unfreeze it to add the paused days back.', unfreeze: 'Plan unfrozen. The paused days were added to the end date.', cancel: 'Plan cancelled.', delete: 'Plan deleted.' }[kind];
+  act(() => post('/subscription/' + kind, { subscriptionPk }), done, refreshMember);
+}
+function togglePayments(pk) {
+  openPayments.has(pk) ? openPayments.delete(pk) : openPayments.add(pk);
+  refreshMember();
+}
+function recordPayment(e, subscriptionPk) {
+  e.preventDefault();
+  act(() => post('/payment/record', { subscriptionPk, ...formData(e.target) }),
+    (p) => Number(p.remainingBalance) > 0 ? `Payment recorded. ${peso(p.remainingBalance)} still owed.` : 'Payment recorded. Fully paid.', refreshMember);
+}
+function deletePayment(pk) {
+  if (!confirm('Remove this payment? The amount goes back onto the balance.')) return;
+  act(() => post('/payment/delete', { pk }), 'Payment removed.', refreshMember);
+}
+function deleteCheckIn(pk) {
+  act(() => post('/checkin/delete', { pk }), 'Visit removed.', refreshMember);
+}
+function deleteNotification(pk) {
+  act(() => post('/notification/delete', { pk }), 'Text removed from the log.', refreshMember);
+}
+
+function openMember(pk) { selectedMember = pk; show('members'); }
+
+// ================= PLANS =================
+
+loaders.plans = async () => {
+  const plans = await get('/plan/all');
+  $('planList').innerHTML = plans.map((p) => `<tr>
+      <td><b>${esc(p.name)}</b></td>
+      <td>${AFFIL[p.eligibleAffiliation]}</td>
+      <td class="num">${plural(p.durationDays, 'day')}</td>
+      <td class="num">${peso(p.price)}</td>
+      <td><form class="price-edit" onsubmit="updatePrice(event, ${p.pk})">
+        <input name="price" placeholder="New price" aria-label="New price for ${esc(p.name)}" inputmode="decimal">
+        <button class="btn small quiet">Save</button></form></td>
+      <td class="num"><button class="btn small danger" onclick="deletePlan(${p.pk})">Delete</button></td></tr>`).join('')
+    || '<tr><td colspan="6" class="empty">No plans yet. Add the first one with the form.</td></tr>';
+};
+
+$('addPlanForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  act(() => post('/plan/add', formData(e.target)), (p) => `Added ${p.name}.`, () => { e.target.reset(); return loaders.plans(); });
+});
+function updatePrice(e, pk) {
+  e.preventDefault();
+  act(() => post('/plan/updateprice', { pk, ...formData(e.target) }), (p) => `${p.name} now costs ${peso(p.price)}.`, loaders.plans);
+}
+function deletePlan(pk) {
+  if (!confirm('Delete this plan? This only works for a plan nobody has bought.')) return;
+  act(() => post('/plan/delete', { pk }), 'Plan deleted.', loaders.plans);
+}
+
+// ================= FOLLOW-UP =================
+
+loaders.followup = async () => {
+  const [expiring, unpaid] = await Promise.all([get('/subscription/expiring', { days: $('expDays').value }), get('/subscription/unpaid')]);
+  const open = (s) => `<button class="btn small quiet" onclick="openMember(${s.memberPk})">Open</button>`;
+  $('expiringList').innerHTML = expiring.map((s) => `<tr><td>${esc(s.memberName)}</td><td>${esc(s.planName)}</td><td>${day(s.endDate)}</td><td class="num">${open(s)}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="empty">No plans end in that window.</td></tr>';
+  $('unpaidList').innerHTML = unpaid.map((s) => `<tr><td>${esc(s.memberName)}<div>${status(s.paymentStatus)}</div></td><td>${esc(s.planName)}</td>
+      <td class="num">${peso(s.balance)}</td><td class="num">${open(s)}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="empty">Nobody owes money right now.</td></tr>';
+};
+$('expDays').addEventListener('change', () => loaders.followup().catch((e) => toast(e.message, false)));
+
+// ================= REPORTS =================
+
+{
+  const d = new Date();
+  $('repTo').value = today();
+  $('repFrom').value = new Date(d.getFullYear(), d.getMonth() - 1, d.getDate()).toLocaleDateString('en-CA');
+}
+
+loaders.reports = async () => {
+  const range = { from: $('repFrom').value, to: $('repTo').value };
+  const [rev, peak] = await Promise.all([get('/report/revenue', range), get('/report/peakhours', range)]);
+  const span = `${dayYear(rev.from)} to ${dayYear(rev.to)}`;
+
+  const max = Math.max(...Object.values(rev.byMethod).map(Number), 1);
+  $('revenue').innerHTML = `
+    <p class="big-figure" style="margin-top:16px">${peso(rev.totalRevenue)}</p>
+    <p class="muted">${plural(rev.paymentCount, 'payment')}, ${span}</p>
+    ${Object.entries(rev.byMethod).map(([k, v]) => `
+      <div class="method"><div class="line"><b>${METHOD[k]}</b><span>${peso(v)}</span></div>
+      <div class="track"><div style="width:${(Number(v) / max) * 100}%"></div></div></div>`).join('')}`;
+
+  const counts = Array(24).fill(0);
+  peak.byHour.forEach((h) => (counts[h.hour] = h.count));
+  const top = Math.max(...counts, 1);
+  const busiest = peak.byHour.slice().sort((a, b) => b.count - a.count)[0];
+  $('peak').innerHTML = `
+    <p class="big-figure" style="margin-top:16px">${busiest ? hourName(busiest.hour) : 'No visits'}</p>
+    <p class="muted">${busiest ? `is the busiest hour, with ${plural(busiest.count, 'visit')} out of ${peak.totalCheckIns}, ${span}` : `between ${span}`}</p>
+    <div class="hours" role="img" aria-label="Check-ins by hour of day">${counts.map((c, h) =>
+      `<div style="height:${(c / top) * 100}%" title="${hourName(h)}: ${plural(c, 'visit')}">${c ? `<span>${c}</span>` : ''}</div>`).join('')}</div>
+    <div class="hour-axis">${counts.map((_, h) => `<span>${h % 6 === 0 ? hourName(h) : ''}</span>`).join('')}</div>`;
+};
+$('repForm').addEventListener('submit', (e) => { e.preventDefault(); loaders.reports().catch((err) => toast(err.message, false)); });
+
+// ---------- start ----------
+show('desk');
+</script>
+</body>
+</html>

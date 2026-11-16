@@ -13,3 +13,21 @@ Gym membership and subscription tracker for CSCI 180.05 (Spring Boot + Jersey + 
 
 Scheduled jobs (expiring subscriptions, renewal reminders, inactivity messages, owner summary)
 run every minute for the demo; the SMS messages show up in FakeTwilio's console.
+
+## Web dashboard (bonus UI)
+
+`ui/index.html` is a front-desk dashboard that uses every BlueFit endpoint. It is plain
+HTML + JavaScript (no install, no build step), calling the service with `fetch()` the same
+way Postman does. `RequestFilter` allows the cross-origin requests.
+
+1. Start BlueFit (and FakeTwilio for SMS) as above.
+2. Double-click `ui/index.html` to open it in Chrome or Edge.
+3. The green dot at the top right means it reached `http://localhost:9999`.
+
+Tabs:
+- **Front Desk** – today's numbers, search a member and check them in (shows why entry is refused).
+- **Members** – register, update phone, send SMS, new/renew/freeze/unfreeze/cancel subscriptions,
+  record and remove payments, view visits and SMS history.
+- **Plans** – add plans, change prices, delete unused plans.
+- **Follow-up** – subscriptions expiring soon and unpaid balances.
+- **Reports** – revenue by payment method and a peak-hours chart for a date range.
