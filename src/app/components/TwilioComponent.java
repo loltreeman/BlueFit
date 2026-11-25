@@ -23,7 +23,7 @@ public class TwilioComponent {
 	static String msgsid = "MG9ed621bcaf657c21bdf9de98647efc3c";
 	static String acctId = "AC7d52d386c10c7c41a3e653d53fcd1b50";
 	static String creds = "910931f86fa37a5766293aed1d198fcd";
-	static String url = "http://localhost:9997/fake_twilio/send";
+	static String url = "http://twilio.fake/fake_twilio/send";
 
 	private TwilioRequests request;
 	private String authorization;
