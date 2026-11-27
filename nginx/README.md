@@ -1,6 +1,6 @@
 Assuming a windows machine, How to set local domains
 
-0. Run XAMPP MySQL (don't turn on APACHE), Fake Twilio, and then Bluefit
+0. Run XAMPP MySQL, Change APACHE Ports from 80 to 8080, Fake Twilio, and then Bluefit
 
 1. Add to hosts file
 ~~~
